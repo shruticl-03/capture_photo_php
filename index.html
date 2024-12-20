@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        video,
+        canvas,
+        img {
+            border: 1px solid #ccc;
+            margin: 10px;
+            max-width: 100%;
+        }
+
+        .controls {
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Photo Capture</h1>
+    <video id="video" autoplay></video>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <img id="preview" style="display: none;" />
+    <div class="controls">
+        <button id="captureButton">Capture Photo</button>
+        <button id="retakeButton" style="display: none;">Retake</button>
+        <button id="saveButton" style="display: none;">Save Photo</button>
+    </div>
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const preview = document.getElementById("preview");
+        const captureButton = document.getElementById("captureButton");
+        const retakeButton = document.getElementById("retakeButton");
+        const saveButton = document.getElementById("saveButton");
+
+        // Access the webcam
+        navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then((stream) => {
+                video.srcObject = stream;
+            })
+            .catch((err) => console.error("Error accessing webcam:", err));
+
+        // Capture photo
+        captureButton.addEventListener("click", () => {
+            const context = canvas.getContext("2d");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL("image/png");
+            preview.src = imageData;
+            preview.style.display = "block";
+            video.style.display = "none";
+            captureButton.style.display = "none";
+            retakeButton.style.display = "inline-block";
+            saveButton.style.display = "inline-block";
+        });
+
+        // Retake photo
+        retakeButton.addEventListener("click", () => {
+            preview.style.display = "none";
+            video.style.display = "block";
+            captureButton.style.display = "inline-block";
+            retakeButton.style.display = "none";
+            saveButton.style.display = "none";
+        });
+
+        // Save photo
+        saveButton.addEventListener("click", () => {
+            const imageData = canvas.toDataURL("image/png");
+            fetch("save.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ image: imageData }),
+            })
+                .then((response) => response.json())
+                .then((data) => alert(data.message))
+                .catch((error) => console.error("Error saving photo:", error));
+        });
+    </script>
+</body>
+
+</html>
